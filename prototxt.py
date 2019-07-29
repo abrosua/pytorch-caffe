@@ -1,10 +1,12 @@
 # 2017.12.16 by xiaohang
+from __future__ import print_function
+from __future__ import division
 from collections import OrderedDict
 import caffe.proto.caffe_pb2 as caffe_pb2
 
 def parse_caffemodel(caffemodel):
     model = caffe_pb2.NetParameter()
-    print 'Loading caffemodel: ', caffemodel
+    print('Loading caffemodel: ', caffemodel)
     with open(caffemodel, 'rb') as fp:
         model.ParseFromString(fp.read())
 
@@ -30,7 +32,7 @@ def parse_prototxt(protofile):
                 key, value = line.split(':')
                 key = key.strip()
                 value = value.strip().strip('"')
-                if block.has_key(key):
+                if key in block:
                     if type(block[key]) == list:
                         block[key].append(value)
                     else:
@@ -59,7 +61,8 @@ def parse_prototxt(protofile):
             key, value = line.split(':')
             key = key.strip()
             value = value.strip().strip('"')
-            if props.has_key(key):
+            # has_key was removed in Python 3
+            if key in props:
                if type(props[key]) == list:
                    props[key].append(value)
                else:
@@ -97,7 +100,7 @@ def print_prototxt(net_info):
         #if str.isnumeric():
         if is_number(value):
             return value
-        elif value in ['true', 'false', 'MAX', 'SUM', 'AVE', 'TRAIN', 'TEST', 'WARP', 'LINEAR', 'AREA', 'NEAREST', 'CUBIC', 'LANCZOS4', 'CENTER', 'LMDB']:
+        elif value == 'true' or value == 'false' or value == 'MAX' or value == 'SUM' or value == 'AVE':
             return value
         else:
             return '\"%s\"' % value
@@ -135,7 +138,7 @@ def save_prototxt(net_info, protofile, region=True):
         #if str.isnumeric():
         if is_number(value):
             return value
-        elif value in ['true', 'false', 'MAX', 'SUM', 'AVE', 'TRAIN', 'TEST', 'WARP', 'LINEAR', 'AREA', 'NEAREST', 'CUBIC', 'LANCZOS4', 'CENTER', 'LMDB']:
+        elif value == 'true' or value == 'false' or value == 'MAX' or value == 'SUM' or value == 'AVE':
             return value
         else:
             return '\"%s\"' % value
@@ -154,40 +157,18 @@ def save_prototxt(net_info, protofile, region=True):
         print >> fp, '%s}' % blanks
         
     props = net_info['props']
-    print >> fp, 'name: \"%s\"' % props['name']
-    if props.has_key('input'):
-        print >> fp, 'input: \"%s\"' % props['input']
-    if props.has_key('input_dim'):
-        print >> fp, 'input_dim: %s' % props['input_dim'][0]
-        print >> fp, 'input_dim: %s' % props['input_dim'][1]
-        print >> fp, 'input_dim: %s' % props['input_dim'][2]
-        print >> fp, 'input_dim: %s' % props['input_dim'][3]
-    print >> fp, ''
     layers = net_info['layers']
+    print >> fp, 'name: \"%s\"' % props['name']
+    print >> fp, 'input: \"%s\"' % props['input']
+    print >> fp, 'input_dim: %s' % props['input_dim'][0]
+    print >> fp, 'input_dim: %s' % props['input_dim'][1]
+    print >> fp, 'input_dim: %s' % props['input_dim'][2]
+    print >> fp, 'input_dim: %s' % props['input_dim'][3]
+    print >> fp, ''
     for layer in layers:
         if layer['type'] != 'Region' or region == True:
             print_block(layer, 'layer', 0)
     fp.close()
-
-def parse_solver(solverfile):
-    solver = OrderedDict()
-    lines = open(solverfile).readlines()
-    for line in lines:
-        line = line.strip()
-        if line[0] == '#':
-            continue
-        if line.find('#') >= 0:
-            line = line.split('#')[0]
-        items = line.split(':')
-        key = items[0].strip()
-        value = items[1].strip().strip('"')
-        if not solver.has_key(key):
-            solver[key] = value
-        elif not type(solver[key]) == list:
-            solver[key] = [solver[key], value]
-        else:
-            solver[key].append(value)
-    return solver
 
 
 if __name__ == '__main__':
@@ -199,3 +180,4 @@ if __name__ == '__main__':
     net_info = parse_prototxt(sys.argv[1])
     print_prototxt(net_info)
     save_prototxt(net_info, 'tmp.prototxt')
+    
